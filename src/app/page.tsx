@@ -1,101 +1,121 @@
-import Image from "next/image";
+"use client";
+import Bubble from "@/components/chat/bubble";
+import HeartPing from "@/components/chat/heart-ping";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { EVENTS, SERVER_LIVE, SERVER_LOCAL, USERNAME } from "@/lib/constants";
+import { Message } from "@/types/message";
+import { BellRing, Heart, MessageCircleHeart, Send } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { io, Socket } from "socket.io-client";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [text, setText] = useState("");
+  const chatBoxRef = useRef<HTMLDivElement>(null);
+  const [hide, setHide] = useState<boolean>(true);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  useEffect(() => {
+    chatBoxRef.current?.scrollBy({
+      top: chatBoxRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [messages]);
+
+  useEffect(() => {
+    const newSocket = io(SERVER_LIVE, {
+      transports: ["websocket"],
+      autoConnect: false,
+      query: {
+        username: USERNAME,
+      },
+    });
+    newSocket.connect();
+    setSocket(newSocket);
+    newSocket.on(EVENTS.SERVER.NEW_MESSAGE, (newMsg: Message) => {
+      const newMessage: Message = {
+        message: newMsg.message,
+        sent: false,
+        username: newMsg.username,
+        time: new Date(newMsg.time).toLocaleTimeString("en-US", {
+          hour12: true,
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+      setMessages((prev) => [...prev, newMessage]);
+    });
+    newSocket.on(
+      EVENTS.SERVER.CONNECTIONS,
+      ({ connections }: { connections: number }) => {
+        if (connections == 2) {
+          setHide(false);
+        } else {
+          setHide(true);
+        }
+      }
+    );
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []);
+
+  const sendMessage = () => {
+    if (text.length == 0) return;
+    const newMessage: Message = {
+      message: text,
+      sent: true,
+      username: USERNAME,
+      time: new Date().toLocaleTimeString("en-US", {
+        hour12: true,
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+    setMessages((prev) => [...prev, newMessage]);
+    socket?.emit(EVENTS.CLIENT.SEND_MESSAGE, newMessage);
+    setText("");
+  };
+
+  const sendPoke = () => {
+    socket?.emit(EVENTS.CLIENT.POKE, { username: USERNAME });
+  };
+  return (
+    <>
+      <section className="max-w-6xl mx-auto h-screen flex flex-col items-stretch justify-center gap-y-8">
+        {!hide && <HeartPing />}
+        <section
+          ref={chatBoxRef}
+          className="flex flex-col h-3/4 overflow-auto items-start gap-y-4 bg-zinc-200 sm:rounded-xl w-full p-4"
+        >
+          {messages?.map((message, index) => (
+            <Bubble key={index} message={message} />
+          ))}
+        </section>
+        <div className="w-sm mx-auto flex gap-x-4 items-center">
+          <Input
+            value={text}
+            onKeyDown={(e) => {
+              if (e.code == "Enter") {
+                sendMessage();
+              }
+            }}
+            onChange={(e) => setText(e.target.value)}
+          />
+          <Button onClick={sendMessage} size={"lg"} className="">
+            <Send />
+          </Button>
+          <Button
+            onClick={sendPoke}
+            size={"lg"}
+            variant={"outline"}
+            className=""
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <BellRing />
+          </Button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </section>
+    </>
   );
 }
