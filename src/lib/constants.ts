@@ -46,6 +46,7 @@ export const EVENTS = {
     JOIN_ROOM: "JOIN_ROOM",
     DOWNSTREAM: "DOWNSTREAM",
     POKE: "POKE",
+    TYPING: "TYPING_CLIENT"
   },
   SERVER: {
     ROOMS: "ROOMS",
@@ -55,5 +56,6 @@ export const EVENTS = {
     CONNECTIONS: "CONNECTIONS",
     UPSTREAM: "UPSTREAM",
     POKED: "POKED",
+    TYPING: "TYPING"
   },
 };
