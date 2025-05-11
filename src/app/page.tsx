@@ -1,14 +1,13 @@
 "use client";
 import Bubble from "@/components/chat/bubble";
-import HeartPing from "@/components/chat/heart-ping";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { EVENTS, SERVER_LOCAL, USERNAME } from "@/lib/constants";
+import { EVENTS, SERVER_LIVE, USERNAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { Message } from "@/types/message";
-import _, { throttle } from "lodash";
+import { set, throttle } from "lodash";
 import { BellRing, Send } from "lucide-react";
-import { useEffect, useRef, useState, useCallback, use } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 
 export default function Home() {
@@ -25,8 +24,10 @@ export default function Home() {
       behavior: "smooth",
     });
   };
-  useEffect(() => {
-    setTyping(false);
+  useEffect(() => {    
+    if (!messages[messages.length -1]?.sent) {
+      setTyping(false);
+    }
     _scrollToBottom();
   }, [messages]);
 
@@ -35,7 +36,7 @@ export default function Home() {
   }, [typing]);
 
   useEffect(() => {
-    const newSocket = io(SERVER_LOCAL, {
+    const newSocket = io(SERVER_LIVE, {
       transports: ["websocket"],
       autoConnect: false,
       query: {
@@ -131,7 +132,7 @@ export default function Home() {
     [socket]
   );
 
-  const _handleTextChange = (value: string) => {
+  const _handleTextChange = (value: string) => {    
     setText(value);
     emitTyping();
   };

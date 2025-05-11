@@ -2,9 +2,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { Message } from "@/types/message";
 
-const TypingIndicator = () =>  {
+const TypingIndicator = () => {
   return (
-    <div className="flex items-center space-x-2">      
+    <div className="flex items-center space-x-2">
       <div className="flex space-x-1 items-center">
         <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0ms]"></span>
         <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:200ms]"></span>
@@ -12,7 +12,7 @@ const TypingIndicator = () =>  {
       </div>
     </div>
   );
-}
+};
 
 const Bubble = ({
   message,
@@ -22,7 +22,7 @@ const Bubble = ({
   typing?: boolean;
 }) => {
   return (
-    <Card className={cn("max-w-1/3", message.sent && "bg-primary self-end")}>
+    <Card className={cn(message.sent && "bg-primary self-end")}>
       <CardContent className="p-2 flex flex-col gap-y-2">
         {!typing ? <p>{message.message}</p> : <TypingIndicator />}
         <span

@@ -35,7 +35,7 @@ export const dummyMessages: Message[] = [
 
 export const SERVER_LOCAL = "http://localhost:5100";
 export const SERVER_LIVE = "https://chatt.foodonspot.online";
-export const USERNAME = "Milan"
+export const USERNAME = "Malu"
 export const EVENTS = {
   connection: "connection",
   disconnect: "disconnect",
